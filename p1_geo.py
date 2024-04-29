@@ -87,14 +87,18 @@ class Transformacje:
         Z = (Rn + h) * sin(phi) - q
         return X, Y, Z
     
-    def xyz2neu(dX, phi, lam):
+    def xyz2neu(xyz0, xyz, phi, lam):
+        phi = radians(phi)
+        lam = radians(lam)
+        
+        dX = xyz - xyz0
         R = array([[-sin(phi) * cos(phi), -sin(lam), cos(phi) * cos(lam)],
                       [-sin(phi) * sin(lam), cos(lam), cos(phi) * sin(lam)],
                       [cos(phi), 0, sin(phi)]])
         dx = R.T @ dX
         return(dx)
             
-
+    
 
 
 if __name__ == "__main__":
@@ -163,7 +167,10 @@ if __name__ == "__main__":
                 f.writelines(line + '\n')
         
 
-        
+# TO DO
+# xyz -> neu
+#  BL (różne elipsoidy) -> 2000
+# BL -> 1992      
         
         
     
