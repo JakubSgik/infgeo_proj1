@@ -77,6 +77,31 @@ class Transformacje:
             
             
     def plh2xyz(self, phi, lam, h):
+        """
+        Zadanie odwrotne do Algorytmu Hirvonena; 
+        transformacja współrzędnych geodezyjnych i wysokosci elipsoidalnej (phi, lam, h),
+        na współrzędne ortokartezjańskie (x, y, z).
+        
+        Rn - długosc odcinka normalnej, mierzona od punktu P0 do punktu przecięcia z osią obrotu elipsoidy;
+        promień krzywizny przekroju poprzecznego (pierwszego wertykału) elipsoidy w punkcie P0.
+        
+        q - pionowe przesunięcie srodka krzywizny przekroju poprzecznego wzgledem srodka elipsoidy
+
+        Parameters
+        ----------
+        Phi
+            [stopnie dziesiętne] - szerokość geodezyjna
+        Lam
+            [stopnie dziesiętne] - długośc geodezyjna.
+        h : TYPE
+            [metry] - wysokość elipsoidalna
+
+        Returns
+        -------
+        X, Y, Z : FLOAT
+             współrzędne w układzie orto-kartezjańskim
+
+        """
         phi = radians(phi)
         lam = radians(lam)
         Rn = self.a / sqrt(1-self.ecc2 * sin(phi)**2)
@@ -106,7 +131,41 @@ class Transformacje:
         dx = R.T @ dX
         n, e, u = dx
         return n, e, u
-            
+
+#informacje
+# zrobilem dokumentacje do plh2xyz zgodnie ze strona 26 z tego zrodla:
+# http://www.geonet.net.pl/images/2002_12_uklady_wspolrz.pdf
+#wydaje mi sie natomiast ze x0, y0, z0 to powinien podawac uzytkownik
+
+#ponizej moja proba zrobienia transformacji, oczywiscie nieudolna
+    # #BL(GRS80, WGS84, ew. Krasowski) -> 2000
+    # def bl22000(self, model, b, l, h, numer_pasa_odwzorowawczego):
+    #     #kroki - bl krasowski -> xyz krasowski -> xyz gk -> bl gk -> xy 2000
+        
+    #     #przeliczanie fi lambda ha -> xyz
+    #     #pierwszy wertykał
+    #     N = self.a/sqrt(1 - self.ecc2 * sin(b)**2)
+    #     X = (N + h) * cos(b) * cos(l)
+    #     Y = (N + h) * cos(b) * sin(l)
+    #     Z = (N * (1 - self.ecc2) + h) * sin(b)
+    #     #tylko teraz czy to ma sens skoro mamy juz funkcje plh2xyz
+    #     #http://www.geonet.net.pl/images/2002_12_uklady_wspolrz.pdf
+    #     #na tej stronie na str 11 mozna przeczytac ze mozna odrazu przejsc z bl krasowskiego na bl gk zaniedbujac wplyw wysokosci
+    #     #tylko jak???
+        
+    #     #tutaj mamy xyz krasowskiego, musimy przejsc do gk
+    #     #to chyba trzeba transformacjami z macierzami, tak jak w cwiczeniu 8 z gw sem 3
+        
+    #     m0 = 0.999923
+    #     x2000 = x_gk * m0
+    #     y2000 = y_gk * m0 + numer_pasa_odwzorowawczego * 1000000 + 500000
+        
+    #     return (x2000, y2000)
+        
+        
+    #     #jeszcze jedna wazna rzecz jest taka ze nie musimy robic tych parametrow elipsoidy w argumentach funkcji, 
+    #     #bo modele sa juz zbudowane w funkcji __init__ zatem wystarczy zeby uzytkownik wybieral model
+        
     
 
 
@@ -204,8 +263,7 @@ if __name__ == "__main__":
                 f.writelines(line + '\n')   
 
 # TO DO
-# xyz -> neu
-#  BL (różne elipsoidy) -> 2000
+# BL (różne elipsoidy) -> 2000
 # BL -> 1992      
         
         
