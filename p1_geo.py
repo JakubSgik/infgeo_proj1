@@ -87,16 +87,25 @@ class Transformacje:
         Z = (Rn + h) * sin(phi) - q
         return X, Y, Z
     
-    def xyz2neu(xyz0, xyz, phi, lam):
-        phi = radians(phi)
-        lam = radians(lam)
+    def xyz2neu(self, x, y, z):
+        x0 = 3664940.500
+        y0 = 1409153.590
+        z0 = 5009571.170
+        
+        xyz = array((x, y, z))
+        xyz0 = array((x0, y0, z0))
         
         dX = xyz - xyz0
+        
+        phi = radians(52.09727221841272)
+        lam = radians(21.03153333279777)
+
         R = array([[-sin(phi) * cos(phi), -sin(lam), cos(phi) * cos(lam)],
                       [-sin(phi) * sin(lam), cos(lam), cos(phi) * sin(lam)],
                       [cos(phi), 0, sin(phi)]])
         dx = R.T @ dX
-        return(dx)
+        n, e, u = dx
+        return n, e, u
             
     
 
@@ -114,11 +123,13 @@ if __name__ == "__main__":
     print(sys.argv)
     input_file_path = sys.argv[-1]
     
-    if '--xyz2plh' in sys.argv and '--phl2xyz' in sys.argv:
+    if '--xyz2plh' in sys.argv and '--phl2xyz' and '--xyz2neu' in sys.argv:
         print('możesz podać tylko jedną falgę')
         
+    # --xyz2neu
+    
     elif '--xyz2plh' in sys.argv:
-            #1
+
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
             coords_lines = lines[1:]
@@ -140,10 +151,11 @@ if __name__ == "__main__":
             for coords_list in coords_plh:
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
-        
+     
+    # --plh2xyz    
+     
     elif '--plh2xyz' in sys.argv:
-        
-    #2
+
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
             coords_lines = lines[1:]
@@ -165,7 +177,31 @@ if __name__ == "__main__":
             for coords_list in coords_xyz:
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
-        
+                
+                
+    elif '--xyz2neu' in sys.argv:
+
+        with open(input_file_path, 'r') as f:
+            lines = f.readlines()
+            coords_lines = lines[1:]
+            #print(coords_lines)
+            
+            coords_plh = []
+            
+            for coord_line in coords_lines:
+                coord_line = coord_line.strip('\n')
+                x_str, y_str, z_str = coord_line.split(',')
+                x, y, z = (float(x_str), float(y_str), float(z_str))
+                n,e,u = geo.xyz2neu(x, y, z)
+                coords_plh.append([n,e,u])
+            
+            
+        with open('result_xyz2neu.txt', 'w') as f:
+            f.write('n [m], e [m], u [m]\n')
+            
+            for coords_list in coords_plh:
+                line = ','.join([str(coord) for coord in coords_list])
+                f.writelines(line + '\n')   
 
 # TO DO
 # xyz -> neu
