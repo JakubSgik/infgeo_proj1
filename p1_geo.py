@@ -1,5 +1,5 @@
 import sys
-from math import sin, cos, sqrt, atan, atan2, degrees, radians
+from math import sin, cos, sqrt, atan, atan2, degrees, radians, tan
 from numpy import array
 
 o = object()
@@ -166,7 +166,57 @@ class Transformacje:
     #     #jeszcze jedna wazna rzecz jest taka ze nie musimy robic tych parametrow elipsoidy w argumentach funkcji, 
     #     #bo modele sa juz zbudowane w funkcji __init__ zatem wystarczy zeby uzytkownik wybieral model
         
+    def sigma_p(self, model, f):
+        
+        A0 = 1 - (self.ecc2/4) - ((3*(self.ecc2**2))/64) - ((5*(self.ecc2**3))/256)
+        A2 = (3/8) * (self.ecc2 + (self.ecc2**2)/4 + (15*(self.ecc2**3))/128)
+        A4 = (15/256) * (self.ecc2**2 + (3*(self.ecc2**3))/4)
+        A6 = (35*(self.ecc2**3))/3072
+
+        sigma = self.a * (A0 * f - A2*sin(2*f) + A4*sin(4*f) - A6*sin(6*f))
+
+        return sigma
     
+    def plh2gk(self, model, f, l, l0):
+        a2 = self.a**2
+        b2 = (a2 * (1 - self.ecc2))
+        e_prim_2 = (a2 - b2)/b2
+        dl = l - l0
+        t = tan(f)
+        eta2 = e_prim_2 * (cos(f)**2)
+        N = self.a / sqrt(1 - self.ecc2 * sin(f)**2)
+
+        sigma = Transformacje.sigma_p(self, model, f)
+
+        x_gk = sigma + (dl ** 2 / 2) * N * sin(f) * cos(f) * (
+            1 + (dl ** 2 / 12) * cos(f) ** 2 *
+            (5 - t ** 2 + 9 * eta2 + 4 * eta2 ** 2)
+            + (dl ** 4 / 360) * cos(f) ** 4 * (61 - 58 * t **
+                                                  2 + t ** 4 + 270 * eta2 - 330 * eta2 * t ** 2)
+        )
+
+        y_gk = dl * N * cos(f) * (
+            1 + (dl ** 2 / 6) * cos(f) ** 2 * (1 - t ** 2 + eta2)
+            + (dl ** 4 / 120) * cos(f) ** 4 * (5 - 18 * t **
+                                                  2 + t ** 4 + 14 * eta2 - 58 * eta2 * t ** 2)
+        )
+
+        return x_gk, y_gk        
+
+    def gk1992(self, x_gk, y_gk):
+        m0 = 0.9993
+        x_1992 = x_gk * m0 - 5300000
+        y_1992 = y_gk * m0 + 500000
+        return x_1992, y_1992    
+
+    def plh1992(self, model, phi, lam):
+        phi = radians(phi)
+        lam = radians(lam)
+        l0 = radians(19)
+        x_gk, y_gk = Transformacje.plh2gk(self, model, phi, lam, l0)
+        x_1992, y_1992 = Transformacje.gk1992(self, x_gk, y_gk)
+        
+        return x_1992, y_1992    
 
 
 if __name__ == "__main__":
@@ -261,7 +311,33 @@ if __name__ == "__main__":
             for coords_list in coords_plh:
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')   
+                
+    # --plh1992
 
+    elif '--plh1992' in sys.argv:
+        model = sys.argv[-2]
+        with open(input_file_path, 'r') as f:
+            lines = f.readlines()
+            coords_lines = lines[1:]
+            #print(coords_lines)
+            
+            coords_xy = []
+            
+            for coord_line in coords_lines:
+                coord_line = coord_line.strip('\n')
+                phi_str, lam_str, h_str = coord_line.split(',')
+                phi, lam, h = (float(phi_str,), float(lam_str), float(h_str))
+                # ------------------------------ DO ZMIANY NA PLH->1992
+                x, y = geo.plh1992(model, phi, lam)
+                coords_xy.append([x, y])
+            
+            
+        with open('result_plh1992.txt', 'w') as f:
+            f.write('x[m], y[m]\n')
+            
+            for coords_list in coords_xy:
+                line = ','.join([str(coord) for coord in coords_list])
+                f.writelines(line + '\n')
 # TO DO
 # BL (różne elipsoidy) -> 2000
 # BL -> 1992      
