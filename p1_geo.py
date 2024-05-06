@@ -281,6 +281,8 @@ if __name__ == "__main__":
     
     print(sys.argv)
     input_file_path = sys.argv[-1]
+    if '--header_lines' in sys.argv:
+        header_lines = int(sys.argv[2])
     
     if '--xyz2plh' in sys.argv and '--phl2xyz' and '--xyz2neu' in sys.argv:
         print('możesz podać tylko jedną falgę')
@@ -291,7 +293,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[1:]
+            coords_lines = lines[header_lines:]
             #print(coords_lines)
             
             coords_plh = []
@@ -317,7 +319,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[1:]
+            coords_lines = lines[header_lines:]
             #print(coords_lines)
             
             coords_xyz = []
@@ -342,7 +344,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[1:]
+            coords_lines = lines[header_lines:]
             #print(coords_lines)
             
             coords_plh = []
@@ -368,7 +370,7 @@ if __name__ == "__main__":
         model = sys.argv[-2]
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[1:]
+            coords_lines = lines[header_lines:]
             #print(coords_lines)
             
             coords_xy = []
@@ -392,7 +394,7 @@ if __name__ == "__main__":
         model = sys.argv[-2]
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[1:]
+            coords_lines = lines[header_lines:]
             #print(coords_lines)
             
             coords_xy = []
@@ -416,7 +418,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[1:]
+            coords_lines = lines[header_lines:]
             #print(coords_lines)
             
             coords_plh = []
