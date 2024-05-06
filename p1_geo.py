@@ -216,9 +216,41 @@ class Transformacje:
         x_gk, y_gk = Transformacje.plh2gk(self, model, phi, lam, l0)
         x_1992, y_1992 = Transformacje.gk1992(self, x_gk, y_gk)
         
-        return x_1992, y_1992    
+        return x_1992, y_1992   
+    
+    def konwersja_gk_2000(x_gk, y_gk, nr_strefy):
+        m0 = 0.999923
+        x_2000 = x_gk * m0
+        y_2000 = y_gk * m0 + nr_strefy * 1000000 + 500000
+        return x_2000, y_2000
+    
+    def konwersja_deg_2000(f, l):
+        strefa = 0
+        l0 = 0
+        if l % np.radians(3) == 0.0:
+            podzielone_l = (l // np.radians(3))
+            
+            lewa_granica_strefy = podzielone_l*3 - 1.5
+            prawa_granica_strefy = podzielone_l*3 + 1.5
+            
+            if np.radians(lewa_granica_strefy) <= l < np.radians(prawa_granica_strefy):
+                l0 = np.radians(podzielone_l*3)
+                strefa = np.degrees(l0)/3
+            
+            x_gk, y_gk = konwersja_deg_gk(f, l, l0)
+        else:
+            podzielone_l = (l // np.radians(3))
+        
+            lewa_granica_strefy = podzielone_l*3 + 1.5
+            prawa_granica_strefy = ((podzielone_l+1)*3 + 1.5)
+        
+            if np.radians(lewa_granica_strefy) <= l < np.radians(prawa_granica_strefy):
+                l0 = np.radians(podzielone_l*3 + 3)
+                strefa = np.degrees(l0)/3
+            x_gk, y_gk = konwersja_deg_gk(f, l, l0)
 
-
+        x_2000, y_2000 = konwersja_gk_2000(x_gk, y_gk, strefa)
+        return x_2000, y_2000, ((int(np.degrees(l0)), int(strefa)))
 if __name__ == "__main__":
     # utworzenie obiektu
     geo = Transformacje(model = "wgs84")
