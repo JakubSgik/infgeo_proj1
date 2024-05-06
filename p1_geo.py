@@ -153,7 +153,7 @@ class Transformacje:
         eta2 = e_prim_2 * (cos(f)**2)
         N = self.a / sqrt(1 - self.ecc2 * sin(f)**2)
 
-        sigma = Transformacje.sigma_p(self, model, f)
+        sigma = self.sigma_p(model, f)
 
         x_gk = sigma + (dl ** 2 / 2) * N * sin(f) * cos(f) * (
             1 + (dl ** 2 / 12) * cos(f) ** 2 *
@@ -180,8 +180,8 @@ class Transformacje:
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
         l0 = radians(19)
-        x_gk, y_gk = Transformacje.plh2gk(self, model, phi, lam, l0)
-        x_1992, y_1992 = Transformacje.gk1992(self, x_gk, y_gk)
+        x_gk, y_gk = self.plh2gk(model, phi, lam, l0)
+        x_1992, y_1992 = self.gk1992(x_gk, y_gk)
         
         return x_1992, y_1992   
     
@@ -206,7 +206,7 @@ class Transformacje:
                 lam0 = np.radians(podzielone_lam*3)
                 strefa = np.degrees(lam0)/3
             
-            x_gk, y_gk = Transformacje.plh2gk(self, model, phi, lam, lam0)
+            x_gk, y_gk = self.plh2gk(model, phi, lam, lam0)
         else:
             podzielone_lam = (lam // np.radians(3))
         
@@ -216,14 +216,17 @@ class Transformacje:
             if np.radians(lewa_granica_strefy) <= lam < np.radians(prawa_granica_strefy):
                 lam0 = np.radians(podzielone_lam*3 + 3)
                 strefa = np.degrees(lam0)/3
-            x_gk, y_gk = Transformacje.plh2gk(self, model, phi, lam, lam0)
+            x_gk, y_gk = self.plh2gk(model, phi, lam, lam0)
 
-        x_2000, y_2000 = Transformacje.gk2000(self, model, x_gk, y_gk, strefa)
+        x_2000, y_2000 = self.gk2000(model, x_gk, y_gk, strefa)
         return x_2000, y_2000#, ((int(np.degrees(lam0)), int(strefa)))
     
 if __name__ == "__main__":
     # utworzenie obiektu
-    geo = Transformacje(model = "wgs84")
+    if '--model' in sys.argv:
+        model = sys.argv[4]
+        
+    geo = Transformacje(model = model)
     # dane XYZ geocentryczne
     # X = 3664940.500; Y = 1409153.590; Z = 5009571.170
     # phi, lam, h = geo.xyz2plh(X, Y, Z)
@@ -236,8 +239,7 @@ if __name__ == "__main__":
     if '--header_lines' in sys.argv:
         header_lines = int(sys.argv[2])
     
-    if '--model' in sys.argv:
-        model = sys.argv[4]
+    
     
     if '--xyz2plh' in sys.argv and '--phl2xyz' and '--xyz2neu' in sys.argv:
         print('możesz podać tylko jedną falgę')
