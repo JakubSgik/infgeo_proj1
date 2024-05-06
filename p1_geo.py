@@ -50,7 +50,7 @@ class Transformacje:
             [stopnie dziesiętne] - szerokość geodezyjna
         lon
             [stopnie dziesiętne] - długośc geodezyjna.
-        h : TYPE
+        h : 
             [metry] - wysokość elipsoidalna
         output [STR] - optional, defoulf 
             dec_degree - decimal degree
@@ -94,13 +94,13 @@ class Transformacje:
             [stopnie dziesiętne] - szerokość geodezyjna
         Lam
             [stopnie dziesiętne] - długośc geodezyjna.
-        h : TYPE
+        h : 
             [metry] - wysokość elipsoidalna
 
         Returns
         -------
         X, Y, Z : FLOAT
-             współrzędne w układzie orto-kartezjańskim
+            Współrzędne w układzie orto-kartezjańskim
 
         """
         phi = radians(phi)
@@ -117,33 +117,22 @@ class Transformacje:
         """
         Transormacja współrzędnych do układu topocentrycznego
         Współrzędne układu topocentrycznego z układu geocentrycznego otrzymujemy 
-        przez przesunięcie początku układu współrzędnych do punktu gdzie znajduje się antena odbiornika (x_0, y_0, z_0) - Translacja,
-        a następnie rotację.
+        przez przesunięcie początku układu współrzędnych do punktu gdzie znajduje się antena odbiornika (x_0, y_0, z_0) - translacja, a następnie rotację.
         Paramtery rotacji zależne są od szerokosci i długosci geodezyjnej anteny (phi, lam)
+        
+        R - macierz obrotu (rotacji)
 
         Parameters
         ----------
-        x : TYPE
-            DESCRIPTION.
-        y : TYPE
-            DESCRIPTION.
-        z : TYPE
-            DESCRIPTION.
-        x_0 : TYPE
-            DESCRIPTION.
-        y_0 : TYPE
-            DESCRIPTION.
-        z_0 : TYPE
-            DESCRIPTION.
+        x, y, z : FLOAT
+            Współrzędne geocentryczne satelitów (koniec wektora odbiornik - nadajnik)
+        x_0, y_0, z_0 : FLOAT
+            Współrzędne geocentryczne odbiornika (początek wektora odbiornik - nadajnik)
 
         Returns
         -------
-        N : TYPE
-            DESCRIPTION.
-        E : TYPE
-            DESCRIPTION.
-        U : TYPE
-            DESCRIPTION.
+        N, E, U : FLOAT
+            Topocentryczne współrzędne satelitów
 
         """
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
@@ -173,6 +162,26 @@ class Transformacje:
         return sigma
     
     def plh2gk(self, model, f, l, l0):
+        """
+            Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w odwzorowaniu Gaussa-Krugera (x_gk, y_gk).
+    
+        Parameters
+        ----------
+        model : STR
+            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
+        Phi: FLOAT
+            Szerokość geodezyjna
+        Lam: FLOAT
+            Długość geodezyjna.
+        Lam0: FLOAT
+            Długosć geodezyjna południka osiowego
+
+        Returns
+        -------
+        x_gk, y_gk : FLOAT
+            Współrzędne w odwzorowaniu Gaussa-Krugera
+
+        """
         a2 = self.a**2
         b2 = (a2 * (1 - self.ecc2))
         e_prim_2 = (a2 - b2)/b2
@@ -199,12 +208,46 @@ class Transformacje:
         return x_gk, y_gk        
 
     def gk1992(self, x_gk, y_gk):
+        """
+            Transformacja współrzędnych w odwzorowaniu Gaussa-Krugera 
+            do współrzędnych w układzie PL-1992.
+
+        Parameters
+        ----------
+        x_gk, y_gk : FLOAT
+            Współrzędne w odwzorowaniu Gaussa-Krugera
+
+        Returns
+        -------
+        x_1992, y_1992 : FLOAT
+            Współrzędne w układzie PL-1992
+
+        """
         m0 = 0.9993
         x_1992 = x_gk * m0 - 5300000
         y_1992 = y_gk * m0 + 500000
         return x_1992, y_1992    
 
     def plh1992(self, model, x, y, z):
+        """
+            Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w układzie PL-1992 (x_1992, y_1992).
+            W tym rozwiązaniu zadanie wykracza krok do tyłu i przelicza 
+            współrzędne ortokartezjańskie (x, y, z) na współrzędne geodezyjne (phi, lam), 
+            a następnie korzysta z nich aby obliczyć współrzędne w układzie PL-1992.
+
+        Parameters
+        ----------
+        model : STR
+            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
+        X, Y, Z : FLOAT
+             Współrzędne w układzie orto-kartezjańskim
+
+        Returns
+        -------
+        x_1992, y_1992 : FLOAT
+            Współrzędne w układzie PL-1992
+
+        """
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
         l0 = radians(19)
@@ -214,12 +257,50 @@ class Transformacje:
         return x_1992, y_1992   
     
     def gk2000(self, model, x_gk, y_gk, nr_strefy):
+        """
+        Transformacja współrzędnych w odwzorowaniu Gaussa-Krugera 
+        do współrzędnych w układzie PL-2000.
+
+        Parameters
+        ----------
+        model : STR
+            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
+        x_gk, y_gk : FLOAT
+            Współrzędne w odwzorowaniu Gaussa-Krugera
+        nr_strefy : STR
+            Numer strefy odzworowawczej
+
+        Returns
+        -------
+        x_2000, y_2000 : FLOAT
+            Współrzędne w układzie PL-2000
+
+        """
         m0 = 0.999923
         x_2000 = x_gk * m0
         y_2000 = y_gk * m0 + nr_strefy * 1000000 + 500000
         return x_2000, y_2000
     
     def plh2000(self, model, x, y, z):
+        """
+            Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w układzie PL-2000 (x_2000, y_2000).
+            W tym rozwiązaniu zadanie wykracza krok do tyłu i przelicza 
+            współrzędne ortokartezjańskie (x, y, z) na współrzędne geodezyjne (phi, lam), 
+            a następnie korzysta z nich aby obliczyć współrzędne w układzie PL-2000.
+
+        Parameters
+        ----------
+        model : STR
+            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
+        X, Y, Z : FLOAT
+             Współrzędne w układzie orto-kartezjańskim
+
+        Returns
+        -------
+        x_2000, y_2000 : FLOAT
+            Współrzędne w układzie PL-2000
+
+        """
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
         strefa = 0
