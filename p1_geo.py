@@ -236,6 +236,9 @@ if __name__ == "__main__":
     if '--header_lines' in sys.argv:
         header_lines = int(sys.argv[2])
     
+    if '--model' in sys.argv:
+        model = sys.argv[4]
+    
     if '--xyz2plh' in sys.argv and '--phl2xyz' and '--xyz2neu' in sys.argv:
         print('możesz podać tylko jedną falgę')
         
@@ -321,7 +324,7 @@ if __name__ == "__main__":
     # --plh1992
 
     elif '--plh1992' in sys.argv:
-        model = sys.argv[-2]
+
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
             coords_lines = lines[header_lines:]
@@ -345,7 +348,7 @@ if __name__ == "__main__":
                 f.writelines(line + '\n')
                 
     elif '--plh2000' in sys.argv:
-        model = sys.argv[-2]
+
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
             coords_lines = lines[header_lines:]
