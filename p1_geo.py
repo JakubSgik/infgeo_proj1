@@ -449,9 +449,9 @@ if __name__ == "__main__":
             for coords_list in coords_xy:
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
-      
+
     # --plh2000
-    
+
     elif '--plh2000' in sys.argv:
 
         with open(input_file_path, 'r') as f:
