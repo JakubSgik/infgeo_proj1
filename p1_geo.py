@@ -128,10 +128,6 @@ class Transformacje:
         
         return N, E, U
         
-        
-#informacje
-# zrobilem dokumentacje do plh2xyz zgodnie ze strona 26 z tego zrodla:
-# http://www.geonet.net.pl/images/2002_12_uklady_wspolrz.pdf
 
     def sigma_p(self, model, f):
         
