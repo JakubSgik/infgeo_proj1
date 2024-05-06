@@ -144,9 +144,9 @@ class Transformacje:
                           [y - y_0],
                           [z - z_0]])
         
-        enu = R.T @  xyz_t
+        [[E], [N], [U]] = R.T @  xyz_t
         
-        return enu
+        return N, E, U
         
         
 #informacje
@@ -388,9 +388,29 @@ if __name__ == "__main__":
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
                 
-    x, y, z = 1, 1, 1
-    x_0, y_0, z_0 = 1, 1, 1
-    enu = geo.xyz2neu2(x, y, z, x_0, y_0, z_0)
-    print(enu)
+    elif '--xyz2neu2' in sys.argv:
+
+        with open(input_file_path, 'r') as f:
+            lines = f.readlines()
+            coords_lines = lines[1:]
+            #print(coords_lines)
+            
+            coords_plh = []
+            
+            for coord_line in coords_lines:
+                coord_line = coord_line.strip('\n')
+                x_str, y_str, z_str = coord_line.split(',')
+                x, y, z = (float(x_str), float(y_str), float(z_str))
+                x_0, y_0, z_0 = [float(coord) for coord in sys.argv[-4:-1]]
+                n,e,u = geo.xyz2neu2(x, y, z, x_0, y_0, z_0)
+                coords_plh.append([n,e,u])
+            
+            
+        with open('result_xyz2neu2.txt', 'w') as f:
+            f.write('n [m], e [m], u [m]\n')
+            
+            for coords_list in coords_plh:
+                line = ','.join([str(coord) for coord in coords_list])
+                f.writelines(line + '\n')   
         
     
