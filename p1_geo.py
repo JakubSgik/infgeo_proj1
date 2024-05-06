@@ -235,13 +235,13 @@ class Transformacje:
         
         return x_1992, y_1992   
     
-    def konwersja_gk_2000(x_gk, y_gk, nr_strefy):
+    def gk2000(self, model, x_gk, y_gk, nr_strefy):
         m0 = 0.999923
         x_2000 = x_gk * m0
         y_2000 = y_gk * m0 + nr_strefy * 1000000 + 500000
         return x_2000, y_2000
     
-    def konwersja_deg_2000(f, l):
+    def plh2000(self, f, l):
         strefa = 0
         l0 = 0
         if l % np.radians(3) == 0.0:
@@ -254,7 +254,7 @@ class Transformacje:
                 l0 = np.radians(podzielone_l*3)
                 strefa = np.degrees(l0)/3
             
-            x_gk, y_gk = konwersja_deg_gk(f, l, l0)
+            x_gk, y_gk = Transformacje.plh2gk(model, f, l, l0)
         else:
             podzielone_l = (l // np.radians(3))
         
@@ -264,10 +264,11 @@ class Transformacje:
             if np.radians(lewa_granica_strefy) <= l < np.radians(prawa_granica_strefy):
                 l0 = np.radians(podzielone_l*3 + 3)
                 strefa = np.degrees(l0)/3
-            x_gk, y_gk = konwersja_deg_gk(f, l, l0)
+            x_gk, y_gk = Transformacje.plh2gk(model, f, l, l0)
 
-        x_2000, y_2000 = konwersja_gk_2000(x_gk, y_gk, strefa)
+        x_2000, y_2000 = Transformacje.gk2000(x_gk, y_gk, strefa)
         return x_2000, y_2000, ((int(np.degrees(l0)), int(strefa)))
+    
 if __name__ == "__main__":
     # utworzenie obiektu
     geo = Transformacje(model = "wgs84")
@@ -376,12 +377,35 @@ if __name__ == "__main__":
                 coord_line = coord_line.strip('\n')
                 phi_str, lam_str, h_str = coord_line.split(',')
                 phi, lam, h = (float(phi_str,), float(lam_str), float(h_str))
-                # ------------------------------ DO ZMIANY NA PLH->1992
                 x, y = geo.plh1992(model, phi, lam)
                 coords_xy.append([x, y])
             
             
         with open('result_plh1992.txt', 'w') as f:
+            f.write('x[m], y[m]\n')
+            
+            for coords_list in coords_xy:
+                line = ','.join([str(coord) for coord in coords_list])
+                f.writelines(line + '\n')
+                
+    elif '--plh2000' in sys.argv:
+        model = sys.argv[-2]
+        with open(input_file_path, 'r') as f:
+            lines = f.readlines()
+            coords_lines = lines[1:]
+            #print(coords_lines)
+            
+            coords_xy = []
+            
+            for coord_line in coords_lines:
+                coord_line = coord_line.strip('\n')
+                phi_str, lam_str, h_str = coord_line.split(',')
+                phi, lam, h = (float(phi_str,), float(lam_str), float(h_str))
+                x, y = geo.plh2000(model, phi, lam)
+                coords_xy.append([x, y])
+            
+            
+        with open('result_plh2000.txt', 'w') as f:
             f.write('x[m], y[m]\n')
             
             for coords_list in coords_xy:
