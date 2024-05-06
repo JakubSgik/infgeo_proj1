@@ -1,6 +1,7 @@
 import sys
 from math import sin, cos, sqrt, atan, atan2, degrees, radians, tan
 from numpy import array
+import numpy as np
 
 o = object()
 
@@ -132,6 +133,22 @@ class Transformacje:
         n, e, u = dx
         return n, e, u
 
+    def xyz2neu2(self, x, y, z, x_0, y_0, z_0):
+        phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
+        
+        R = np.array([[-sin(lam), -sin(phi)*cos(lam), cos(phi)*cos(lam)],
+                      [cos(lam), -sin(phi)*sin(lam), cos(phi)*sin(lam)],
+                      [        0,           cos(phi),       sin(phi)]])
+        
+        xyz_t = np.array([[x - x_0],
+                          [y - y_0],
+                          [z - z_0]])
+        
+        enu = R.T @  xyz_t
+        
+        return enu
+        
+        
 #informacje
 # zrobilem dokumentacje do plh2xyz zgodnie ze strona 26 z tego zrodla:
 # http://www.geonet.net.pl/images/2002_12_uklady_wspolrz.pdf
@@ -370,9 +387,10 @@ if __name__ == "__main__":
             for coords_list in coords_xy:
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
-# TO DO
-# BL (różne elipsoidy) -> 2000
-# BL -> 1992      
-        
+                
+    x, y, z = 1, 1, 1
+    x_0, y_0, z_0 = 1, 1, 1
+    enu = geo.xyz2neu2(x, y, z, x_0, y_0, z_0)
+    print(enu)
         
     
