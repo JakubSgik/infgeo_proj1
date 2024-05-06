@@ -138,8 +138,8 @@ class Transformacje:
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
         R = np.array([[-sin(lam), -sin(phi)*cos(lam), cos(phi)*cos(lam)],
-                      [cos(lam), -sin(phi)*sin(lam), cos(phi)*sin(lam)],
-                      [        0,           cos(phi),       sin(phi)]])
+                      [ cos(lam), -sin(phi)*sin(lam), cos(phi)*sin(lam)],
+                      [        0,           cos(phi),         sin(phi)]])
         
         xyz_t = np.array([[x - x_0],
                           [y - y_0],
@@ -161,7 +161,7 @@ class Transformacje:
 
         return sigma
     
-    def plh2gk(self, model, f, l, l0):
+    def plh2gk(self, model, phi, lam, lam0):
         """
             Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w odwzorowaniu Gaussa-Krugera (x_gk, y_gk).
     
@@ -185,27 +185,25 @@ class Transformacje:
         a2 = self.a**2
         b2 = (a2 * (1 - self.ecc2))
         e_prim_2 = (a2 - b2)/b2
-        dl = l - l0
-        t = tan(f)
-        eta2 = e_prim_2 * (cos(f)**2)
-        N = self.a / sqrt(1 - self.ecc2 * sin(f)**2)
+        dl = lam - lam0
+        t = tan(phi)
+        eta2 = e_prim_2 * (cos(phi)**2)
+        N = self.a / sqrt(1 - self.ecc2 * sin(phi)**2)
 
-        sigma = self.sigma_p(model, f)
+        sigma = self.sigma_p(model, phi)
 
-        x_gk = sigma + (dl ** 2 / 2) * N * sin(f) * cos(f) * (
-            1 + (dl ** 2 / 12) * cos(f) ** 2 *
-            (5 - t ** 2 + 9 * eta2 + 4 * eta2 ** 2)
-            + (dl ** 4 / 360) * cos(f) ** 4 * (61 - 58 * t **
-                                                  2 + t ** 4 + 270 * eta2 - 330 * eta2 * t ** 2)
-        )
+        x_gk = sigma + (dl ** 2 / 2) * N * sin(phi) * cos(phi) 
+        * (1 + (dl ** 2 / 12) * cos(phi) ** 2 
+           *(5 - t ** 2 + 9 * eta2 + 4 * eta2 ** 2)
+            + (dl ** 4 / 360) * cos(phi) ** 4 
+            * (61 - 58 * t **2 + t ** 4 + 270 * eta2 - 330 * eta2 * t ** 2))
 
-        y_gk = dl * N * cos(f) * (
-            1 + (dl ** 2 / 6) * cos(f) ** 2 * (1 - t ** 2 + eta2)
-            + (dl ** 4 / 120) * cos(f) ** 4 * (5 - 18 * t **
-                                                  2 + t ** 4 + 14 * eta2 - 58 * eta2 * t ** 2)
-        )
-
+        y_gk = dl * N * cos(phi) * (1 + (dl ** 2 / 6) * cos(phi) ** 2 
+                                    * (1 - t ** 2 + eta2)
+            + (dl ** 4 / 120) * cos(phi) ** 4 
+            * (5 - 18 * t **2 + t ** 4 + 14 * eta2 - 58 * eta2 * t ** 2))
         return x_gk, y_gk        
+
 
     def gk1992(self, x_gk, y_gk):
         """
@@ -331,17 +329,10 @@ class Transformacje:
         return x_2000, y_2000#, ((int(np.degrees(lam0)), int(strefa)))
     
 if __name__ == "__main__":
-    # utworzenie obiektu
     if '--model' in sys.argv:
-        model = sys.argv[4]
-        
+        model = sys.argv[4]   
     geo = Transformacje(model = model)
-    # dane XYZ geocentryczne
-    # X = 3664940.500; Y = 1409153.590; Z = 5009571.170
-    # phi, lam, h = geo.xyz2plh(X, Y, Z)
-    # print(phi, lam, h)
-    # phi, lam, h = geo.xyz2plh2(X, Y, Z)
-    # print(phi, lam, h)
+    
     
     print(sys.argv)
     input_file_path = sys.argv[-1]
@@ -405,6 +396,7 @@ if __name__ == "__main__":
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
                 
+    #--xyz2neu
                 
     elif '--xyz2neu' in sys.argv:
 
@@ -457,7 +449,9 @@ if __name__ == "__main__":
             for coords_list in coords_xy:
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
-                
+      
+    # --plh2000
+    
     elif '--plh2000' in sys.argv:
 
         with open(input_file_path, 'r') as f:
