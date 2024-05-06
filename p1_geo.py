@@ -113,27 +113,7 @@ class Transformacje:
         Z = (Rn + h) * sin(phi) - q
         return X, Y, Z
     
-    def xyz2neu(self, x, y, z):
-        x0 = 3664940.500
-        y0 = 1409153.590
-        z0 = 5009571.170
-        
-        xyz = array((x, y, z))
-        xyz0 = array((x0, y0, z0))
-        
-        dX = xyz - xyz0
-        
-        phi = radians(52.09727221841272)
-        lam = radians(21.03153333279777)
-
-        R = array([[-sin(phi) * cos(phi), -sin(lam), cos(phi) * cos(lam)],
-                      [-sin(phi) * sin(lam), cos(lam), cos(phi) * sin(lam)],
-                      [cos(phi), 0, sin(phi)]])
-        dx = R.T @ dX
-        n, e, u = dx
-        return n, e, u
-
-    def xyz2neu2(self, x, y, z, x_0, y_0, z_0):
+    def xyz2neu(self, x, y, z, x_0, y_0, z_0):
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
         R = np.array([[-sin(lam), -sin(phi)*cos(lam), cos(phi)*cos(lam)],
@@ -152,37 +132,7 @@ class Transformacje:
 #informacje
 # zrobilem dokumentacje do plh2xyz zgodnie ze strona 26 z tego zrodla:
 # http://www.geonet.net.pl/images/2002_12_uklady_wspolrz.pdf
-#wydaje mi sie natomiast ze x0, y0, z0 to powinien podawac uzytkownik
 
-#ponizej moja proba zrobienia transformacji, oczywiscie nieudolna
-    # #BL(GRS80, WGS84, ew. Krasowski) -> 2000
-    # def bl22000(self, model, b, l, h, numer_pasa_odwzorowawczego):
-    #     #kroki - bl krasowski -> xyz krasowski -> xyz gk -> bl gk -> xy 2000
-        
-    #     #przeliczanie fi lambda ha -> xyz
-    #     #pierwszy wertykał
-    #     N = self.a/sqrt(1 - self.ecc2 * sin(b)**2)
-    #     X = (N + h) * cos(b) * cos(l)
-    #     Y = (N + h) * cos(b) * sin(l)
-    #     Z = (N * (1 - self.ecc2) + h) * sin(b)
-    #     #tylko teraz czy to ma sens skoro mamy juz funkcje plh2xyz
-    #     #http://www.geonet.net.pl/images/2002_12_uklady_wspolrz.pdf
-    #     #na tej stronie na str 11 mozna przeczytac ze mozna odrazu przejsc z bl krasowskiego na bl gk zaniedbujac wplyw wysokosci
-    #     #tylko jak???
-        
-    #     #tutaj mamy xyz krasowskiego, musimy przejsc do gk
-    #     #to chyba trzeba transformacjami z macierzami, tak jak w cwiczeniu 8 z gw sem 3
-        
-    #     m0 = 0.999923
-    #     x2000 = x_gk * m0
-    #     y2000 = y_gk * m0 + numer_pasa_odwzorowawczego * 1000000 + 500000
-        
-    #     return (x2000, y2000)
-        
-        
-    #     #jeszcze jedna wazna rzecz jest taka ze nie musimy robic tych parametrow elipsoidy w argumentach funkcji, 
-    #     #bo modele sa juz zbudowane w funkcji __init__ zatem wystarczy zeby uzytkownik wybieral model
-        
     def sigma_p(self, model, f):
         
         A0 = 1 - (self.ecc2/4) - ((3*(self.ecc2**2))/64) - ((5*(self.ecc2**3))/256)
@@ -226,9 +176,9 @@ class Transformacje:
         y_1992 = y_gk * m0 + 500000
         return x_1992, y_1992    
 
-    def plh1992(self, model, phi, lam):
-        phi = radians(phi)
-        lam = radians(lam)
+    def plh1992(self, model, x, y, z):
+        phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
+        
         l0 = radians(19)
         x_gk, y_gk = Transformacje.plh2gk(self, model, phi, lam, l0)
         x_1992, y_1992 = Transformacje.gk1992(self, x_gk, y_gk)
@@ -241,33 +191,35 @@ class Transformacje:
         y_2000 = y_gk * m0 + nr_strefy * 1000000 + 500000
         return x_2000, y_2000
     
-    def plh2000(self, f, l):
+    def plh2000(self, model, x, y, z):
+        phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
+        
         strefa = 0
-        l0 = 0
-        if l % np.radians(3) == 0.0:
-            podzielone_l = (l // np.radians(3))
+        lam0 = 0
+        if lam % np.radians(3) == 0.0:
+            podzielone_lam = (lam // np.radians(3))
             
-            lewa_granica_strefy = podzielone_l*3 - 1.5
-            prawa_granica_strefy = podzielone_l*3 + 1.5
+            lewa_granica_strefy = podzielone_lam*3 - 1.5
+            prawa_granica_strefy = podzielone_lam*3 + 1.5
             
-            if np.radians(lewa_granica_strefy) <= l < np.radians(prawa_granica_strefy):
-                l0 = np.radians(podzielone_l*3)
-                strefa = np.degrees(l0)/3
+            if np.radians(lewa_granica_strefy) <= lam < np.radians(prawa_granica_strefy):
+                lam0 = np.radians(podzielone_lam*3)
+                strefa = np.degrees(lam0)/3
             
-            x_gk, y_gk = Transformacje.plh2gk(model, f, l, l0)
+            x_gk, y_gk = Transformacje.plh2gk(self, model, phi, lam, lam0)
         else:
-            podzielone_l = (l // np.radians(3))
+            podzielone_lam = (lam // np.radians(3))
         
-            lewa_granica_strefy = podzielone_l*3 + 1.5
-            prawa_granica_strefy = ((podzielone_l+1)*3 + 1.5)
+            lewa_granica_strefy = podzielone_lam*3 + 1.5
+            prawa_granica_strefy = ((podzielone_lam+1)*3 + 1.5)
         
-            if np.radians(lewa_granica_strefy) <= l < np.radians(prawa_granica_strefy):
-                l0 = np.radians(podzielone_l*3 + 3)
-                strefa = np.degrees(l0)/3
-            x_gk, y_gk = Transformacje.plh2gk(model, f, l, l0)
+            if np.radians(lewa_granica_strefy) <= lam < np.radians(prawa_granica_strefy):
+                lam0 = np.radians(podzielone_lam*3 + 3)
+                strefa = np.degrees(lam0)/3
+            x_gk, y_gk = Transformacje.plh2gk(self, model, phi, lam, lam0)
 
-        x_2000, y_2000 = Transformacje.gk2000(x_gk, y_gk, strefa)
-        return x_2000, y_2000, ((int(np.degrees(l0)), int(strefa)))
+        x_2000, y_2000 = Transformacje.gk2000(self, model, x_gk, y_gk, strefa)
+        return x_2000, y_2000#, ((int(np.degrees(lam0)), int(strefa)))
     
 if __name__ == "__main__":
     # utworzenie obiektu
@@ -353,16 +305,18 @@ if __name__ == "__main__":
                 coord_line = coord_line.strip('\n')
                 x_str, y_str, z_str = coord_line.split(',')
                 x, y, z = (float(x_str), float(y_str), float(z_str))
-                n,e,u = geo.xyz2neu(x, y, z)
+                x_0, y_0, z_0 = [float(coord) for coord in sys.argv[-4:-1]]
+                n,e,u = geo.xyz2neu(x, y, z, x_0, y_0, z_0)
                 coords_plh.append([n,e,u])
             
             
-        with open('result_xyz2neu.txt', 'w') as f:
+        with open('result_xyz2neu2.txt', 'w') as f:
             f.write('n [m], e [m], u [m]\n')
             
             for coords_list in coords_plh:
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')   
+         
                 
     # --plh1992
 
@@ -377,10 +331,10 @@ if __name__ == "__main__":
             
             for coord_line in coords_lines:
                 coord_line = coord_line.strip('\n')
-                phi_str, lam_str, h_str = coord_line.split(',')
-                phi, lam, h = (float(phi_str,), float(lam_str), float(h_str))
-                x, y = geo.plh1992(model, phi, lam)
-                coords_xy.append([x, y])
+                x_str, y_str, z_str = coord_line.split(',')
+                x, y, z = (float(x_str), float(y_str), float(z_str))
+                x_1992, y_1992 = geo.plh1992(model, x, y, z)
+                coords_xy.append([x_1992, y_1992])
             
             
         with open('result_plh1992.txt', 'w') as f:
@@ -401,10 +355,10 @@ if __name__ == "__main__":
             
             for coord_line in coords_lines:
                 coord_line = coord_line.strip('\n')
-                phi_str, lam_str, h_str = coord_line.split(',')
-                phi, lam, h = (float(phi_str,), float(lam_str), float(h_str))
-                x, y = geo.plh2000(model, phi, lam)
-                coords_xy.append([x, y])
+                x_str, y_str, z_str = coord_line.split(',')
+                x, y, z = (float(x_str), float(y_str), float(z_str))
+                x_2000, y_2000 = geo.plh2000(model, x, y, z)
+                coords_xy.append([x_2000, y_2000])
             
             
         with open('result_plh2000.txt', 'w') as f:
@@ -414,29 +368,5 @@ if __name__ == "__main__":
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
                 
-    elif '--xyz2neu2' in sys.argv:
-
-        with open(input_file_path, 'r') as f:
-            lines = f.readlines()
-            coords_lines = lines[header_lines:]
-            #print(coords_lines)
-            
-            coords_plh = []
-            
-            for coord_line in coords_lines:
-                coord_line = coord_line.strip('\n')
-                x_str, y_str, z_str = coord_line.split(',')
-                x, y, z = (float(x_str), float(y_str), float(z_str))
-                x_0, y_0, z_0 = [float(coord) for coord in sys.argv[-4:-1]]
-                n,e,u = geo.xyz2neu2(x, y, z, x_0, y_0, z_0)
-                coords_plh.append([n,e,u])
-            
-            
-        with open('result_xyz2neu2.txt', 'w') as f:
-            f.write('n [m], e [m], u [m]\n')
-            
-            for coords_list in coords_plh:
-                line = ','.join([str(coord) for coord in coords_list])
-                f.writelines(line + '\n')   
-        
+    
     
