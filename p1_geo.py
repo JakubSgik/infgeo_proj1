@@ -114,6 +114,38 @@ class Transformacje:
         return X, Y, Z
     
     def xyz2neu(self, x, y, z, x_0, y_0, z_0):
+        """
+        Transormacja współrzędnych do układu topocentrycznego
+        Współrzędne układu topocentrycznego z układu geocentrycznego otrzymujemy 
+        przez przesunięcie początku układu współrzędnych do punktu gdzie znajduje się antena odbiornika (x_0, y_0, z_0) - Translacja,
+        a następnie rotację.
+        Paramtery rotacji zależne są od szerokosci i długosci geodezyjnej anteny (phi, lam)
+
+        Parameters
+        ----------
+        x : TYPE
+            DESCRIPTION.
+        y : TYPE
+            DESCRIPTION.
+        z : TYPE
+            DESCRIPTION.
+        x_0 : TYPE
+            DESCRIPTION.
+        y_0 : TYPE
+            DESCRIPTION.
+        z_0 : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        N : TYPE
+            DESCRIPTION.
+        E : TYPE
+            DESCRIPTION.
+        U : TYPE
+            DESCRIPTION.
+
+        """
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
         R = np.array([[-sin(lam), -sin(phi)*cos(lam), cos(phi)*cos(lam)],
@@ -128,10 +160,6 @@ class Transformacje:
         
         return N, E, U
         
-        
-#informacje
-# zrobilem dokumentacje do plh2xyz zgodnie ze strona 26 z tego zrodla:
-# http://www.geonet.net.pl/images/2002_12_uklady_wspolrz.pdf
 
     def sigma_p(self, model, f):
         
