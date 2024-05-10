@@ -222,11 +222,32 @@ class Transformacje:
         return x_2000, y_2000#, ((int(np.degrees(lam0)), int(strefa)))
     
 if __name__ == "__main__":
-    # utworzenie obiektu
-    if '--model' in sys.argv:
-        model = sys.argv[4]
+    
+    # podanie długości nagłóWka
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == '--naglowek':
+            if i + 1 < len(sys.argv):
+                naglowek = int(sys.argv[i + 1])
+                
+        if sys.argv[i] == '--model':
+            if i + 1 < len(sys.argv):
+                model = sys.argv[i + 1]
+                geo = Transformacje(model=model)
+    
+    # Wartości domyślne są ustawiane po pętli
+    if '--naglowek' not in sys.argv:
+        naglowek = 1
+    
+    if '--model' not in sys.argv:
+        geo = Transformacje(model='wgs84')
+                
         
-    geo = Transformacje(model = model)
+        
+    # podanie ścieżki pliku z danymi
+    input_file_path = sys.argv[-1]
+    
+    print(sys.argv)
+    
     # dane XYZ geocentryczne
     # X = 3664940.500; Y = 1409153.590; Z = 5009571.170
     # phi, lam, h = geo.xyz2plh(X, Y, Z)
@@ -234,13 +255,8 @@ if __name__ == "__main__":
     # phi, lam, h = geo.xyz2plh2(X, Y, Z)
     # print(phi, lam, h)
     
-    print(sys.argv)
-    input_file_path = sys.argv[-1]
-    if '--header_lines' in sys.argv:
-        header_lines = int(sys.argv[2])
     
-    
-    
+
     if '--xyz2plh' in sys.argv and '--phl2xyz' and '--xyz2neu' in sys.argv:
         print('możesz podać tylko jedną falgę')
         
@@ -250,7 +266,8 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
+            print(naglowek)
             #print(coords_lines)
             
             coords_plh = []
@@ -276,7 +293,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
             #print(coords_lines)
             
             coords_xyz = []
@@ -301,7 +318,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
             #print(coords_lines)
             
             coords_plh = []
@@ -329,7 +346,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
             #print(coords_lines)
             
             coords_xy = []
@@ -355,7 +372,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
             #print(coords_lines)
             
             coords_xy = []
