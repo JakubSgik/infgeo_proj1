@@ -53,7 +53,7 @@ class Transformacje:
             [stopnie dziesiętne] - szerokość geodezyjna
         lon
             [stopnie dziesiętne] - długośc geodezyjna.
-        h : TYPE
+        h : 
             [metry] - wysokość elipsoidalna
         output [STR] - optional, defoulf 
             dec_degree - decimal degree
@@ -97,13 +97,13 @@ class Transformacje:
             [stopnie dziesiętne] - szerokość geodezyjna
         Lam
             [stopnie dziesiętne] - długośc geodezyjna.
-        h : TYPE
+        h : 
             [metry] - wysokość elipsoidalna
 
         Returns
         -------
         X, Y, Z : FLOAT
-             współrzędne w układzie orto-kartezjańskim
+            Współrzędne w układzie orto-kartezjańskim
 
         """
         phi = radians(phi)
@@ -117,11 +117,34 @@ class Transformacje:
         return X, Y, Z
     
     def xyz2neu(self, x, y, z, x_0, y_0, z_0):
+        """
+        Transormacja współrzędnych do układu topocentrycznego
+        Współrzędne układu topocentrycznego z układu geocentrycznego otrzymujemy 
+        przez przesunięcie początku układu współrzędnych do punktu gdzie znajduje się antena odbiornika (x_0, y_0, z_0) - translacja, a następnie rotację.
+        Paramtery rotacji zależne są od szerokosci i długosci geodezyjnej anteny (phi, lam)
+        
+        R - macierz obrotu (rotacji)
+
+        Parameters
+        ----------
+        x, y, z : FLOAT
+            Współrzędne geocentryczne satelitów (koniec wektora odbiornik - nadajnik)
+        x_0, y_0, z_0 : FLOAT
+            Współrzędne geocentryczne odbiornika (początek wektora odbiornik - nadajnik)
+
+        Returns
+        -------
+        N, E, U : FLOAT
+            Topocentryczne współrzędne satelitów
+
+        """
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
+
         R = array([[-sin(lam), -sin(phi)*cos(lam), cos(phi)*cos(lam)],
                    [cos(lam), -sin(phi)*sin(lam), cos(phi)*sin(lam)],
                    [        0,           cos(phi),       sin(phi)]])
+
         
         xyz_t = array([[x - x_0],
                        [y - y_0],
@@ -131,10 +154,6 @@ class Transformacje:
         
         return N, E, U
         
-        
-#informacje
-# zrobilem dokumentacje do plh2xyz zgodnie ze strona 26 z tego zrodla:
-# http://www.geonet.net.pl/images/2002_12_uklady_wspolrz.pdf
 
     def sigma_p(self, model, f):
         
@@ -147,39 +166,91 @@ class Transformacje:
 
         return sigma
     
-    def plh2gk(self, model, f, l, l0):
+    def plh2gk(self, model, phi, lam, lam0):
+        """
+            Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w odwzorowaniu Gaussa-Krugera (x_gk, y_gk).
+    
+        Parameters
+        ----------
+        model : STR
+            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
+        Phi: FLOAT
+            Szerokość geodezyjna
+        Lam: FLOAT
+            Długość geodezyjna.
+        Lam0: FLOAT
+            Długosć geodezyjna południka osiowego
+
+        Returns
+        -------
+        x_gk, y_gk : FLOAT
+            Współrzędne w odwzorowaniu Gaussa-Krugera
+
+        """
         a2 = self.a**2
         b2 = (a2 * (1 - self.ecc2))
         e_prim_2 = (a2 - b2)/b2
-        dl = l - l0
-        t = tan(f)
-        eta2 = e_prim_2 * (cos(f)**2)
-        N = self.a / sqrt(1 - self.ecc2 * sin(f)**2)
+        dl = lam - lam0
+        t = tan(phi)
+        eta2 = e_prim_2 * (cos(phi)**2)
+        N = self.a / sqrt(1 - self.ecc2 * sin(phi)**2)
 
-        sigma = self.sigma_p(model, f)
+        sigma = self.sigma_p(model, phi)
 
-        x_gk = sigma + (dl ** 2 / 2) * N * sin(f) * cos(f) * (
-            1 + (dl ** 2 / 12) * cos(f) ** 2 *
-            (5 - t ** 2 + 9 * eta2 + 4 * eta2 ** 2)
-            + (dl ** 4 / 360) * cos(f) ** 4 * (61 - 58 * t **
-                                                  2 + t ** 4 + 270 * eta2 - 330 * eta2 * t ** 2)
-        )
+        x_gk = sigma + (dl ** 2 / 2) * N * sin(phi) * cos(phi) 
+        * (1 + (dl ** 2 / 12) * cos(phi) ** 2 
+           *(5 - t ** 2 + 9 * eta2 + 4 * eta2 ** 2)
+            + (dl ** 4 / 360) * cos(phi) ** 4 
+            * (61 - 58 * t **2 + t ** 4 + 270 * eta2 - 330 * eta2 * t ** 2))
 
-        y_gk = dl * N * cos(f) * (
-            1 + (dl ** 2 / 6) * cos(f) ** 2 * (1 - t ** 2 + eta2)
-            + (dl ** 4 / 120) * cos(f) ** 4 * (5 - 18 * t **
-                                                  2 + t ** 4 + 14 * eta2 - 58 * eta2 * t ** 2)
-        )
-
+        y_gk = dl * N * cos(phi) * (1 + (dl ** 2 / 6) * cos(phi) ** 2 
+                                    * (1 - t ** 2 + eta2)
+            + (dl ** 4 / 120) * cos(phi) ** 4 
+            * (5 - 18 * t **2 + t ** 4 + 14 * eta2 - 58 * eta2 * t ** 2))
         return x_gk, y_gk        
 
+
     def gk1992(self, x_gk, y_gk):
+        """
+            Transformacja współrzędnych w odwzorowaniu Gaussa-Krugera 
+            do współrzędnych w układzie PL-1992.
+
+        Parameters
+        ----------
+        x_gk, y_gk : FLOAT
+            Współrzędne w odwzorowaniu Gaussa-Krugera
+
+        Returns
+        -------
+        x_1992, y_1992 : FLOAT
+            Współrzędne w układzie PL-1992
+
+        """
         m0 = 0.9993
         x_1992 = x_gk * m0 - 5300000
         y_1992 = y_gk * m0 + 500000
         return x_1992, y_1992    
 
     def plh1992(self, model, x, y, z):
+        """
+            Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w układzie PL-1992 (x_1992, y_1992).
+            W tym rozwiązaniu zadanie wykracza krok do tyłu i przelicza 
+            współrzędne ortokartezjańskie (x, y, z) na współrzędne geodezyjne (phi, lam), 
+            a następnie korzysta z nich aby obliczyć współrzędne w układzie PL-1992.
+
+        Parameters
+        ----------
+        model : STR
+            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
+        X, Y, Z : FLOAT
+             Współrzędne w układzie orto-kartezjańskim
+
+        Returns
+        -------
+        x_1992, y_1992 : FLOAT
+            Współrzędne w układzie PL-1992
+
+        """
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
         l0 = radians(19)
@@ -189,12 +260,50 @@ class Transformacje:
         return x_1992, y_1992   
     
     def gk2000(self, model, x_gk, y_gk, nr_strefy):
+        """
+        Transformacja współrzędnych w odwzorowaniu Gaussa-Krugera 
+        do współrzędnych w układzie PL-2000.
+
+        Parameters
+        ----------
+        model : STR
+            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
+        x_gk, y_gk : FLOAT
+            Współrzędne w odwzorowaniu Gaussa-Krugera
+        nr_strefy : STR
+            Numer strefy odzworowawczej
+
+        Returns
+        -------
+        x_2000, y_2000 : FLOAT
+            Współrzędne w układzie PL-2000
+
+        """
         m0 = 0.999923
         x_2000 = x_gk * m0
         y_2000 = y_gk * m0 + nr_strefy * 1000000 + 500000
         return x_2000, y_2000
     
     def plh2000(self, model, x, y, z):
+        """
+            Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w układzie PL-2000 (x_2000, y_2000).
+            W tym rozwiązaniu zadanie wykracza krok do tyłu i przelicza 
+            współrzędne ortokartezjańskie (x, y, z) na współrzędne geodezyjne (phi, lam), 
+            a następnie korzysta z nich aby obliczyć współrzędne w układzie PL-2000.
+
+        Parameters
+        ----------
+        model : STR
+            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
+        X, Y, Z : FLOAT
+             Współrzędne w układzie orto-kartezjańskim
+
+        Returns
+        -------
+        x_2000, y_2000 : FLOAT
+            Współrzędne w układzie PL-2000
+
+        """
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
         strefa = 0
@@ -225,6 +334,7 @@ class Transformacje:
         return x_2000, y_2000
     
 if __name__ == "__main__":
+
     
     # podanie długości nagłóWka
     for i in range(len(sys.argv)):
@@ -257,6 +367,7 @@ if __name__ == "__main__":
     # print(phi, lam, h)
     # phi, lam, h = geo.xyz2plh2(X, Y, Z)
     # print(phi, lam, h)
+
     
     
 
@@ -316,6 +427,7 @@ if __name__ == "__main__":
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
                 
+    #--xyz2neu
                 
     elif '--xyz2neu' in sys.argv:
 
@@ -368,9 +480,9 @@ if __name__ == "__main__":
             for coords_list in coords_xy:
                 line = ','.join([str(coord) for coord in coords_list])
                 f.writelines(line + '\n')
-                
+
     # --plh2000
-                
+
     elif '--plh2000' in sys.argv:
 
         with open(input_file_path, 'r') as f:
