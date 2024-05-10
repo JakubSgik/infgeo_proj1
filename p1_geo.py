@@ -26,6 +26,9 @@ class Transformacje:
         elif model == "mars":
             self.a = 3396900.0
             self.b = 3376097.80585952
+        elif model == "krasowski":
+            self.a = 6378245.0
+            self.b = 6356863.01877307
         else:
             raise NotImplementedError(f"{model} model not implemented")
         self.flat = (self.a - self.b) / self.a
@@ -137,13 +140,15 @@ class Transformacje:
         """
         phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
         
-        R = np.array([[-sin(lam), -sin(phi)*cos(lam), cos(phi)*cos(lam)],
-                      [ cos(lam), -sin(phi)*sin(lam), cos(phi)*sin(lam)],
-                      [        0,           cos(phi),         sin(phi)]])
+
+        R = array([[-sin(lam), -sin(phi)*cos(lam), cos(phi)*cos(lam)],
+                   [cos(lam), -sin(phi)*sin(lam), cos(phi)*sin(lam)],
+                   [        0,           cos(phi),       sin(phi)]])
+
         
-        xyz_t = np.array([[x - x_0],
-                          [y - y_0],
-                          [z - z_0]])
+        xyz_t = array([[x - x_0],
+                       [y - y_0],
+                       [z - z_0]])
         
         [[E], [N], [U]] = R.T @  xyz_t
         
@@ -303,44 +308,69 @@ class Transformacje:
         
         strefa = 0
         lam0 = 0
-        if lam % np.radians(3) == 0.0:
-            podzielone_lam = (lam // np.radians(3))
+        if lam % radians(3) == 0.0:
+            temp_lam = (lam // radians(3))
             
-            lewa_granica_strefy = podzielone_lam*3 - 1.5
-            prawa_granica_strefy = podzielone_lam*3 + 1.5
+            lewa_granica_strefy = temp_lam*3 - 1.5
+            prawa_granica_strefy = temp_lam*3 + 1.5
             
-            if np.radians(lewa_granica_strefy) <= lam < np.radians(prawa_granica_strefy):
-                lam0 = np.radians(podzielone_lam*3)
-                strefa = np.degrees(lam0)/3
+            if radians(lewa_granica_strefy) <= lam < radians(prawa_granica_strefy):
+                lam0 = radians(temp_lam*3)
+                strefa = degrees(lam0)/3
             
             x_gk, y_gk = self.plh2gk(model, phi, lam, lam0)
         else:
-            podzielone_lam = (lam // np.radians(3))
+            temp_lam = (lam // radians(3))
         
-            lewa_granica_strefy = podzielone_lam*3 + 1.5
-            prawa_granica_strefy = ((podzielone_lam+1)*3 + 1.5)
+            lewa_granica_strefy = temp_lam*3 + 1.5
+            prawa_granica_strefy = ((temp_lam+1)*3 + 1.5)
         
-            if np.radians(lewa_granica_strefy) <= lam < np.radians(prawa_granica_strefy):
-                lam0 = np.radians(podzielone_lam*3 + 3)
-                strefa = np.degrees(lam0)/3
+            if radians(lewa_granica_strefy) <= lam < radians(prawa_granica_strefy):
+                lam0 = radians(temp_lam*3 + 3)
+                strefa = degrees(lam0)/3
             x_gk, y_gk = self.plh2gk(model, phi, lam, lam0)
 
         x_2000, y_2000 = self.gk2000(model, x_gk, y_gk, strefa)
-        return x_2000, y_2000#, ((int(np.degrees(lam0)), int(strefa)))
+        return x_2000, y_2000
     
 if __name__ == "__main__":
-    if '--model' in sys.argv:
-        model = sys.argv[4]   
-    geo = Transformacje(model = model)
+
     
+    # podanie długości nagłóWka
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == '--naglowek':
+            if i + 1 < len(sys.argv):
+                naglowek = int(sys.argv[i + 1])
+                
+        if sys.argv[i] == '--model':
+            if i + 1 < len(sys.argv):
+                model = sys.argv[i + 1]
+                geo = Transformacje(model=model)
+    
+    # Wartości domyślne są ustawiane po pętli
+    if '--naglowek' not in sys.argv:
+        naglowek = 1
+    
+    if '--model' not in sys.argv:
+        geo = Transformacje(model='wgs84')
+                
+        
+        
+    # podanie ścieżki pliku z danymi
+    input_file_path = sys.argv[-1]
     
     print(sys.argv)
-    input_file_path = sys.argv[-1]
-    if '--header_lines' in sys.argv:
-        header_lines = int(sys.argv[2])
+    
+    # dane XYZ geocentryczne
+    # X = 3664940.500; Y = 1409153.590; Z = 5009571.170
+    # phi, lam, h = geo.xyz2plh(X, Y, Z)
+    # print(phi, lam, h)
+    # phi, lam, h = geo.xyz2plh2(X, Y, Z)
+    # print(phi, lam, h)
+
     
     
-    
+
     if '--xyz2plh' in sys.argv and '--phl2xyz' and '--xyz2neu' in sys.argv:
         print('możesz podać tylko jedną falgę')
         
@@ -350,7 +380,8 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
+            print(naglowek)
             #print(coords_lines)
             
             coords_plh = []
@@ -376,7 +407,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
             #print(coords_lines)
             
             coords_xyz = []
@@ -402,7 +433,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
             #print(coords_lines)
             
             coords_plh = []
@@ -430,7 +461,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
             #print(coords_lines)
             
             coords_xy = []
@@ -456,7 +487,7 @@ if __name__ == "__main__":
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
-            coords_lines = lines[header_lines:]
+            coords_lines = lines[naglowek:]
             #print(coords_lines)
             
             coords_xy = []
