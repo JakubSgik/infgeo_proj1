@@ -142,8 +142,8 @@ class Transformacje:
         
 
         R = array([[-sin(lam), -sin(phi)*cos(lam), cos(phi)*cos(lam)],
-                   [cos(lam), -sin(phi)*sin(lam), cos(phi)*sin(lam)],
-                   [        0,           cos(phi),       sin(phi)]])
+                   [cos(lam),  -sin(phi)*sin(lam), cos(phi)*sin(lam)],
+                   [        0,           cos(phi),       sin(phi)   ]])
 
         
         xyz_t = array([[x - x_0],
@@ -155,14 +155,14 @@ class Transformacje:
         return N, E, U
         
 
-    def sigma_p(self, model, f):
+    def sigma_p(self, model, phi):
         
         A0 = 1 - (self.ecc2/4) - ((3*(self.ecc2**2))/64) - ((5*(self.ecc2**3))/256)
         A2 = (3/8) * (self.ecc2 + (self.ecc2**2)/4 + (15*(self.ecc2**3))/128)
         A4 = (15/256) * (self.ecc2**2 + (3*(self.ecc2**3))/4)
         A6 = (35*(self.ecc2**3))/3072
 
-        sigma = self.a * (A0 * f - A2*sin(2*f) + A4*sin(4*f) - A6*sin(6*f))
+        sigma = self.a * (A0 * phi - A2*sin(2*phi) + A4*sin(4*phi) - A6*sin(6*phi))
 
         return sigma
     
@@ -197,16 +197,16 @@ class Transformacje:
 
         sigma = self.sigma_p(model, phi)
 
-        x_gk = sigma + (dl ** 2 / 2) * N * sin(phi) * cos(phi) 
-        * (1 + (dl ** 2 / 12) * cos(phi) ** 2 
-           *(5 - t ** 2 + 9 * eta2 + 4 * eta2 ** 2)
-            + (dl ** 4 / 360) * cos(phi) ** 4 
-            * (61 - 58 * t **2 + t ** 4 + 270 * eta2 - 330 * eta2 * t ** 2))
+        x_gk = sigma + (dl ** 2 / 2) * N * sin(phi) * cos(phi) \
+            * (1 + (dl ** 2 / 12) * cos(phi) ** 2
+               * (5 - t ** 2 + 9 * eta2 + 4 * eta2 ** 2)
+               + (dl ** 4 / 360) * cos(phi) ** 4
+               * (61 - 58 * t ** 2 + t ** 4 + 270 * eta2 - 330 * eta2 * t ** 2))
 
-        y_gk = dl * N * cos(phi) * (1 + (dl ** 2 / 6) * cos(phi) ** 2 
+        y_gk = dl * N * cos(phi) * (1 + (dl ** 2 / 6) * cos(phi) ** 2
                                     * (1 - t ** 2 + eta2)
-            + (dl ** 4 / 120) * cos(phi) ** 4 
-            * (5 - 18 * t **2 + t ** 4 + 14 * eta2 - 58 * eta2 * t ** 2))
+                                    + (dl ** 4 / 120) * cos(phi) ** 4
+                                    * (5 - 18 * t ** 2 + t ** 4 + 14 * eta2 - 58 * eta2 * t ** 2))
         return x_gk, y_gk        
 
 
@@ -308,35 +308,40 @@ class Transformacje:
         
         strefa = 0
         lam0 = 0
-        if lam % radians(3) == 0.0:
-            temp_lam = (lam // radians(3))
-            
-            lewa_granica_strefy = temp_lam*3 - 1.5
-            prawa_granica_strefy = temp_lam*3 + 1.5
-            
-            if radians(lewa_granica_strefy) <= lam < radians(prawa_granica_strefy):
-                lam0 = radians(temp_lam*3)
-                strefa = degrees(lam0)/3
-            
+        center_zone_lam = (degrees(lam) // 3)
+        
+        if degrees(lam) % 3 == 0.0:
+            left_zone_boundary = center_zone_lam * 3 - 1.5
+            right_zone_boundary = center_zone_lam * 3 + 1.5
+        
+            if radians(left_zone_boundary) <= lam < radians(right_zone_boundary):
+                lam0 = radians(center_zone_lam * 3)
+                strefa = degrees(lam0) / 3
+        
             x_gk, y_gk = self.plh2gk(model, phi, lam, lam0)
         else:
-            temp_lam = (lam // radians(3))
+            if degrees(lam) - center_zone_lam * 3 < 1.5:
+                left_zone_boundary = ((center_zone_lam - 1) * 3 + 1.5)
+                right_zone_boundary = center_zone_lam * 3 + 1.5
+                if radians(left_zone_boundary) <= lam < radians(right_zone_boundary):
+                    lam0 = radians(center_zone_lam * 3)
+                    strefa = degrees(lam0) / 3
+            else:
+                left_zone_boundary = center_zone_lam * 3 + 1.5
+                right_zone_boundary = ((center_zone_lam + 1) * 3 + 1.5)
+                if radians(left_zone_boundary) <= lam < radians(right_zone_boundary):
+                    lam0 = radians((center_zone_lam + 1) * 3)
+                    strefa = degrees(lam0) / 3
         
-            lewa_granica_strefy = temp_lam*3 + 1.5
-            prawa_granica_strefy = ((temp_lam+1)*3 + 1.5)
-        
-            if radians(lewa_granica_strefy) <= lam < radians(prawa_granica_strefy):
-                lam0 = radians(temp_lam*3 + 3)
-                strefa = degrees(lam0)/3
             x_gk, y_gk = self.plh2gk(model, phi, lam, lam0)
-
+        
         x_2000, y_2000 = self.gk2000(model, x_gk, y_gk, strefa)
         return x_2000, y_2000
+
     
 if __name__ == "__main__":
 
-    
-    # podanie długości nagłóWka
+    # podanie długości nagłówka oraz modelu elipsoidy
     for i in range(len(sys.argv)):
         if sys.argv[i] == '--naglowek':
             if i + 1 < len(sys.argv):
@@ -347,32 +352,28 @@ if __name__ == "__main__":
                 model = sys.argv[i + 1]
                 geo = Transformacje(model=model)
     
-    # Wartości domyślne są ustawiane po pętli
+    # Wartości domyślne nagłówka i modelu
     if '--naglowek' not in sys.argv:
         naglowek = 1
     
     if '--model' not in sys.argv:
         geo = Transformacje(model='wgs84')
-                
-        
-        
+  
     # podanie ścieżki pliku z danymi
     input_file_path = sys.argv[-1]
-    
+
+    # wydruk 
     print(sys.argv)
     
-    # dane XYZ geocentryczne
-    # X = 3664940.500; Y = 1409153.590; Z = 5009571.170
-    # phi, lam, h = geo.xyz2plh(X, Y, Z)
-    # print(phi, lam, h)
-    # phi, lam, h = geo.xyz2plh2(X, Y, Z)
-    # print(phi, lam, h)
-
+    # licznik, który sprawdza, czy nie została podana więcej niż jedna funkcja
+    flags = ['--xyz2plh', '--plh2xyz', '--xyz2neu', '--xyz1992', '--xyz2000'] # lista flag-funkcji
+    count_flags = 0
+    for flag in flags:
+        if flag in sys.argv:
+            count_flags += 1
     
-    
-
-    if '--xyz2plh' in sys.argv and '--phl2xyz' and '--xyz2neu' in sys.argv:
-        print('możesz podać tylko jedną falgę')
+    if count_flags > 1:
+        raise ValueError('Możesz podać tylko jedną flagę.')
         
     # --xyz2neu
     
