@@ -117,7 +117,7 @@ class Transformacje:
 
     def xyz2neu(self, x, y, z, x_0, y_0, z_0):
         """
-        Transormacja współrzędnych do układu topocentrycznego
+        Transformacja współrzędnych do układu topocentrycznego
         Współrzędne w układzie topocentrycznym otrzymujemy 
         przez przesunięcie początku układu współrzędnych do wybranego punktu (x_0, y_0, z_0) - translacja, a następnie rotację.
         Paramtery rotacji zależne są od szerokosci i długosci geodezyjnej punktu (phi, lam)
@@ -151,7 +151,7 @@ class Transformacje:
 
         return N, E, U
 
-    def sigma_p(self, model, phi):
+    def sigma_p(self, phi):
 
         A0 = 1 - (self.ecc2/4) - ((3*(self.ecc2**2))/64) - \
             ((5*(self.ecc2**3))/256)
@@ -164,14 +164,12 @@ class Transformacje:
 
         return sigma
 
-    def plh2gk(self, model, phi, lam, lam0):
+    def plh2gk(self, phi, lam, lam0):
         """
             Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w odwzorowaniu Gaussa-Krugera (x_gk, y_gk).
     
         Parameters
         ----------
-        model : STR
-            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80 lub inny
         Phi: FLOAT
             Szerokość geodezyjna
         Lam: FLOAT
@@ -228,19 +226,16 @@ class Transformacje:
         y_1992 = y_gk * m0 + 500000
         return x_1992, y_1992
 
-    def plh1992(self, model, x, y, z):
+    def plh1992(self, phi, lam):
         """
             Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w układzie PL-1992 (x_1992, y_1992).
-            W tym rozwiązaniu zadanie wykracza krok do tyłu i przelicza 
-            współrzędne ortokartezjańskie (x, y, z) na współrzędne geodezyjne (phi, lam), 
-            a następnie korzysta z nich aby obliczyć współrzędne w układzie PL-1992.
-
+            
         Parameters
         ----------
-        model : STR
-            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
-        X, Y, Z : FLOAT
-             Współrzędne w układzie orto-kartezjańskim
+        Phi: FLOAT
+            Szerokość geodezyjna
+        Lam: FLOAT
+            Długość geodezyjna.
 
         Returns
         -------
@@ -256,15 +251,13 @@ class Transformacje:
 
         return x_1992, y_1992
 
-    def gk2000(self, model, x_gk, y_gk, nr_strefy):
+    def gk2000(self,  x_gk, y_gk, zone):
         """
         Transformacja współrzędnych w odwzorowaniu Gaussa-Krugera 
         do współrzędnych w układzie PL-2000.
 
         Parameters
         ----------
-        model : STR
-            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80
         x_gk, y_gk : FLOAT
             Współrzędne w odwzorowaniu Gaussa-Krugera
         zone : STR
@@ -278,22 +271,19 @@ class Transformacje:
         """
         m0 = 0.999923
         x_2000 = x_gk * m0
-        y_2000 = y_gk * m0 + nr_strefy * 1000000 + 500000
+        y_2000 = y_gk * m0 + zone * 1000000 + 500000
         return x_2000, y_2000
 
-    def plh2000(self, model, x, y, z):
+    def plh2000(self, phi, lam):
         """
             Transformacja współrzędnych geodezyjnych (phi, lam), na współrzędne w układzie PL-2000 (x_2000, y_2000).
-            W tym rozwiązaniu zadanie wykracza krok do tyłu i przelicza 
-            współrzędne ortokartezjańskie (x, y, z) na współrzędne geodezyjne (phi, lam), 
-            a następnie korzysta z nich aby obliczyć współrzędne w układzie PL-2000.
 
         Parameters
         ----------
-        model : STR
-            Model elipsoidy przyjęty do obliczeń: wgs84 lub grs80 lub inny
-        X, Y, Z : FLOAT
-             Współrzędne w układzie orto-kartezjańskim
+        Phi: FLOAT
+            Szerokość geodezyjna
+        Lam: FLOAT
+            Długość geodezyjna.
 
         Returns
         -------
@@ -301,7 +291,6 @@ class Transformacje:
             Współrzędne w układzie PL-2000
 
         """
-        phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
 
         strefa = 0
         lam0 = 0
@@ -359,11 +348,13 @@ if __name__ == "__main__":
     # podanie ścieżki pliku z danymi
     input_file_path = sys.argv[-1]
 
-    # wydruk
-    print(sys.argv)
+    # wydruk argumentów
+    # print(sys.argv)
 
     # licznik, który sprawdza, czy nie została podana więcej niż jedna funkcja
-    flags = ['--xyz2plh', '--plh2xyz', '--xyz2neu',
+    flags = ['--xyz2plh', '--plh2xyz',
+             '--xyz2neu',
+             '--plh1992', '--plh2000',
              '--xyz1992', '--xyz2000']  # lista flag-funkcji
     count_flags = 0
     for flag in flags:
@@ -373,7 +364,7 @@ if __name__ == "__main__":
     if count_flags > 1:
         raise ValueError('Możesz podać tylko jedną flagę.')
         
-    # --xyz2neu
+    # --xyz2plh
 
     elif '--xyz2plh' in sys.argv:
 
@@ -459,9 +450,9 @@ if __name__ == "__main__":
 
             for coord_line in coords_lines:
                 coord_line = coord_line.strip('\n')
-                x_str, y_str, z_str = coord_line.split(',')
-                x, y, z = (float(x_str), float(y_str), float(z_str))
-                x_1992, y_1992 = geo.plh1992(model, x, y, z)
+                phi_str, lam_str, h_str = coord_line.split(',')
+                phi, lam, h = (float(phi_str,), float(lam_str), float(h_str))
+                x_1992, y_1992 = geo.plh1992(phi, lam)
                 coords_xy.append([x_1992, y_1992])
 
         with open('result_plh1992.txt', 'w') as f:
@@ -483,12 +474,62 @@ if __name__ == "__main__":
 
             for coord_line in coords_lines:
                 coord_line = coord_line.strip('\n')
-                x_str, y_str, z_str = coord_line.split(',')
-                x, y, z = (float(x_str), float(y_str), float(z_str))
-                x_2000, y_2000 = geo.plh2000(model, x, y, z)
+                phi_str, lam_str, h_str = coord_line.split(',')
+                phi, lam, h = (float(phi_str,), float(lam_str), float(h_str))
+                x_2000, y_2000 = geo.plh2000(phi, lam)
                 coords_xy.append([x_2000, y_2000])
 
         with open('result_plh2000.txt', 'w') as f:
+            f.write('x[m], y[m]\n')
+
+            for coords_list in coords_xy:
+                line = ','.join([str(coord) for coord in coords_list])
+                f.writelines(line + '\n')
+
+    # --xyz1992
+
+    elif '--xyz1992' in sys.argv:
+
+        with open(input_file_path, 'r') as f:
+            lines = f.readlines()
+            coords_lines = lines[naglowek:]
+
+            coords_xy = []
+
+            for coord_line in coords_lines:
+                coord_line = coord_line.strip('\n')
+                x_str, y_str, z_str = coord_line.split(',')
+                x, y, z = (float(x_str), float(y_str), float(z_str))
+                phi, lam, h = geo.xyz2plh(x, y, z)
+                x_1992, y_1992 = geo.plh1992(phi, lam)
+                coords_xy.append([x_1992, y_1992])
+
+        with open('result_xyz1992.txt', 'w') as f:
+            f.write('x[m], y[m]\n')
+
+            for coords_list in coords_xy:
+                line = ','.join([str(coord) for coord in coords_list])
+                f.writelines(line + '\n')
+
+    # --xyz2000
+
+    elif '--xyz2000' in sys.argv:
+
+        with open(input_file_path, 'r') as f:
+            lines = f.readlines()
+            coords_lines = lines[naglowek:]
+
+            coords_xy = []
+
+            for coord_line in coords_lines:
+                coord_line = coord_line.strip('\n')
+                x_str, y_str, z_str = coord_line.split(',')
+                x, y, z = (float(x_str), float(y_str), float(z_str))
+                phi, lam, h = geo.xyz2plh(x, y, z)
+                x_2000, y_2000 = geo.plh2000(phi, lam)
+                coords_xy.append([x_2000, y_2000])
+
+        with open('result_xyz2000.txt', 'w') as f:
             f.write('x[m], y[m]\n')
 
             for coords_list in coords_xy:
