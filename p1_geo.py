@@ -348,8 +348,8 @@ if __name__ == "__main__":
     # podanie ścieżki pliku z danymi
     input_file_path = sys.argv[-1]
 
-    # wydruk
-    print(sys.argv)
+    # wydruk argumentów
+    # print(sys.argv)
 
     # licznik, który sprawdza, czy nie została podana więcej niż jedna funkcja
     flags = ['--xyz2plh', '--plh2xyz',
