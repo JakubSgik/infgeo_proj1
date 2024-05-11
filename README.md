@@ -26,13 +26,14 @@ Domyślną elipsoidą jest **WGS84**. Aby zastosować model wybranej innej elips
 --model krasowski
 ```
 ---
-Program obsługuje również flagę `--naglowek [dlugosc_naglowka]`, która zapewnia poprawne działanie poprzez pominięcie podanej liczby początkowych wierszy przy odczytywaniu pliku z danymi wsadowymi. Domyślnie pomijany jest **1** wiersz, co również można skonfigurować przy wywołaniu:
+Program obsługuje również flagę `--naglowek [dlugosc_naglowka]`, która zapewnia poprawne działanie poprzez pominięcie podanej liczby początkowych wierszy przy odczytywaniu pliku z danymi początkowymi. Domyślnie pomijany jest **1** wiersz, co również można skonfigurować przy wywołaniu:
 ```
 --naglowek 5
 ```
 
 ## Przykłady użycia
 Program uruchamia się w wierszu poleceń, podając każdorazowo nazwę biblioteki `p1_geo.py`, typ transformacji do wykonania oraz nazwę pliku z danymi wejściowymi (wskazanie pliku musi odbyć się zawsze na samym końcu polecenia).
+Do wywołania transofrmacji konieczne jest skonfigurowanie zmiennej środowiskowej "python" prowadzącej do lokalizacji tegoż programu; w innym przypadku konieczne będzie każdorazowe wprowadzanie scieżki do lokalizacji programu python.
 ```bash
 python p1_geo.py [transformacja] [sciezka_do_pliku_z_danymi]
 ```
