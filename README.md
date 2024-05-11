@@ -73,3 +73,4 @@ Niezbędne biblioteki:
 
 ## Znane błędy
 - brak możliwości podania współrzędnych `X0 Y0 Z0` dla transformacji do NEU w dowolnym miejscu 
+- brak możliwości wybrania sposobu zapisu wartości kątowych (`rad` lub `deg` lub `grad`) - domyślnie `deg`

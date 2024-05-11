@@ -191,7 +191,7 @@ class Transformacje:
         eta2 = e_prim_2 * (cos(phi)**2)
         N = self.a / sqrt(1 - self.ecc2 * sin(phi)**2)
 
-        sigma = self.sigma_p(model, phi)
+        sigma = self.sigma_p(phi)
 
         x_gk = sigma + (dl ** 2 / 2) * N * sin(phi) * cos(phi) \
             * (1 + (dl ** 2 / 12) * cos(phi) ** 2
@@ -243,10 +243,9 @@ class Transformacje:
             Współrzędne w układzie PL-1992
 
         """
-        phi, lam, _ = [radians(coord) for coord in self.xyz2plh(x, y, z)]
 
         l0 = radians(19)
-        x_gk, y_gk = self.plh2gk(model, phi, lam, l0)
+        x_gk, y_gk = self.plh2gk(phi, lam, l0)
         x_1992, y_1992 = self.gk1992(x_gk, y_gk)
 
         return x_1992, y_1992
@@ -304,7 +303,7 @@ class Transformacje:
                 lam0 = radians(center_zone_lam * 3)
                 strefa = degrees(lam0) / 3
 
-            x_gk, y_gk = self.plh2gk(model, phi, lam, lam0)
+            x_gk, y_gk = self.plh2gk(phi, lam, lam0)
         else:
             if degrees(lam) - center_zone_lam * 3 < 1.5:
                 left_zone_boundary = ((center_zone_lam - 1) * 3 + 1.5)
@@ -319,9 +318,9 @@ class Transformacje:
                     lam0 = radians((center_zone_lam + 1) * 3)
                     strefa = degrees(lam0) / 3
 
-            x_gk, y_gk = self.plh2gk(model, phi, lam, lam0)
+            x_gk, y_gk = self.plh2gk(phi, lam, lam0)
 
-        x_2000, y_2000 = self.gk2000(model, x_gk, y_gk, strefa)
+        x_2000, y_2000 = self.gk2000(x_gk, y_gk, strefa)
         return x_2000, y_2000
 
     
@@ -343,6 +342,7 @@ if __name__ == "__main__":
         naglowek = 1
 
     if '--model' not in sys.argv:
+        model = 'wgs84'
         geo = Transformacje(model='wgs84')
 
     # podanie ścieżki pliku z danymi
@@ -350,6 +350,9 @@ if __name__ == "__main__":
 
     # wydruk argumentów
     # print(sys.argv)
+    print('Długość nagłówka:', naglowek)
+    print('Wybrany model:', model)
+    print('Wybrana operacja:' )
 
     # licznik, który sprawdza, czy nie została podana więcej niż jedna funkcja
     flags = ['--xyz2plh', '--plh2xyz',
@@ -357,21 +360,28 @@ if __name__ == "__main__":
              '--plh1992', '--plh2000',
              '--xyz1992', '--xyz2000']  # lista flag-funkcji
     count_flags = 0
+    chosen_flag = None  # zmienna przechowująca wybraną flagę
+    
     for flag in flags:
         if flag in sys.argv:
             count_flags += 1
-
+            chosen_flag = flag
+    
     if count_flags > 1:
         raise ValueError('Możesz podać tylko jedną flagę.')
-        
+    elif count_flags == 1:
+        print(chosen_flag)
+    
+    elif count_flags == 0:
+        raise ValueError('Nie wybrano żadnej operacji')
+  
     # --xyz2plh
 
-    elif '--xyz2plh' in sys.argv:
+    if '--xyz2plh' in sys.argv:
 
         with open(input_file_path, 'r') as f:
             lines = f.readlines()
             coords_lines = lines[naglowek:]
-            print(naglowek)
 
             coords_plh = []
 
@@ -383,7 +393,7 @@ if __name__ == "__main__":
                 coords_plh.append([phi, lam, h])
 
         with open('result_xyz2plh.txt', 'w') as f:
-            f.write('phi[deg], lam[deg], h[m]\n')
+            f.write('phi [deg], lam [deg], h [m]\n')
 
             for coords_list in coords_plh:
                 line = ','.join([str(coord) for coord in coords_list])
@@ -407,7 +417,7 @@ if __name__ == "__main__":
                 coords_xyz.append([x, y, z])
 
         with open('result_plh2xyz.txt', 'w') as f:
-            f.write('x[m], y[m], z[m]\n')
+            f.write('X [m], Y [m], Z [m]\n')
 
             for coords_list in coords_xyz:
                 line = ','.join([str(coord) for coord in coords_list])
@@ -431,7 +441,7 @@ if __name__ == "__main__":
                 n, e, u = geo.xyz2neu(x, y, z, x_0, y_0, z_0)
                 coords_plh.append([n, e, u])
 
-        with open('result_xyz2neu2.txt', 'w') as f:
+        with open('result_xyz2neu.txt', 'w') as f:
             f.write('n [m], e [m], u [m]\n')
 
             for coords_list in coords_plh:
@@ -451,12 +461,12 @@ if __name__ == "__main__":
             for coord_line in coords_lines:
                 coord_line = coord_line.strip('\n')
                 phi_str, lam_str, h_str = coord_line.split(',')
-                phi, lam, h = (float(phi_str,), float(lam_str), float(h_str))
+                phi, lam, h = (radians(float(phi_str)), radians(float(lam_str)), float(h_str))
                 x_1992, y_1992 = geo.plh1992(phi, lam)
                 coords_xy.append([x_1992, y_1992])
 
         with open('result_plh1992.txt', 'w') as f:
-            f.write('x[m], y[m]\n')
+            f.write('x [m], y [m]\n')
 
             for coords_list in coords_xy:
                 line = ','.join([str(coord) for coord in coords_list])
@@ -475,12 +485,12 @@ if __name__ == "__main__":
             for coord_line in coords_lines:
                 coord_line = coord_line.strip('\n')
                 phi_str, lam_str, h_str = coord_line.split(',')
-                phi, lam, h = (float(phi_str,), float(lam_str), float(h_str))
+                phi, lam, h = (radians(float(phi_str,)), radians(float(lam_str)), float(h_str))
                 x_2000, y_2000 = geo.plh2000(phi, lam)
                 coords_xy.append([x_2000, y_2000])
 
         with open('result_plh2000.txt', 'w') as f:
-            f.write('x[m], y[m]\n')
+            f.write('x [m], y [m]\n')
 
             for coords_list in coords_xy:
                 line = ','.join([str(coord) for coord in coords_list])
@@ -500,12 +510,12 @@ if __name__ == "__main__":
                 coord_line = coord_line.strip('\n')
                 x_str, y_str, z_str = coord_line.split(',')
                 x, y, z = (float(x_str), float(y_str), float(z_str))
-                phi, lam, h = geo.xyz2plh(x, y, z)
+                phi, lam, h = [radians(coord) for coord in geo.xyz2plh(x, y, z)]
                 x_1992, y_1992 = geo.plh1992(phi, lam)
                 coords_xy.append([x_1992, y_1992])
 
         with open('result_xyz1992.txt', 'w') as f:
-            f.write('x[m], y[m]\n')
+            f.write('x [m], y [m]\n')
 
             for coords_list in coords_xy:
                 line = ','.join([str(coord) for coord in coords_list])
@@ -525,12 +535,12 @@ if __name__ == "__main__":
                 coord_line = coord_line.strip('\n')
                 x_str, y_str, z_str = coord_line.split(',')
                 x, y, z = (float(x_str), float(y_str), float(z_str))
-                phi, lam, h = geo.xyz2plh(x, y, z)
+                phi, lam, h = [radians(coord) for coord in geo.xyz2plh(x, y, z)]
                 x_2000, y_2000 = geo.plh2000(phi, lam)
                 coords_xy.append([x_2000, y_2000])
 
         with open('result_xyz2000.txt', 'w') as f:
-            f.write('x[m], y[m]\n')
+            f.write('x [m], y [m]\n')
 
             for coords_list in coords_xy:
                 line = ','.join([str(coord) for coord in coords_list])
