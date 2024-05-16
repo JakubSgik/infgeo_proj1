@@ -33,7 +33,7 @@ Program obsługuje również flagę `--naglowek [dlugosc_naglowka]`, która zape
 
 ## Przykłady użycia
 Program uruchamia się w wierszu poleceń, podając każdorazowo nazwę biblioteki `p1_geo.py`, typ transformacji do wykonania oraz nazwę pliku z danymi wejściowymi (wskazanie pliku musi odbyć się zawsze na samym końcu polecenia).
-Do poprawnego działania konieczne jest skonfigurowanie zmiennej środowiskowej "python"; w innym przypadku konieczne będzie każdorazowe wprowadzanie scieżki do lokalizacji programu python.
+Do poprawnego działania konieczne jest skonfigurowanie zmiennej środowiskowej PATH i dodanie do niej ścieżki do interpretora programu python; w innym przypadku konieczne będzie każdorazowe wprowadzanie scieżki do lokalizacji programu python.
 ```bash
 python p1_geo.py [transformacja] [sciezka_do_pliku_z_danymi]
 ```
