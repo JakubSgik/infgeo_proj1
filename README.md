@@ -18,7 +18,6 @@ W bibliotece zostały zaimplementowane jak dotąd metody pozwalające na następ
 Ponadto, biblioteka zawiera wbudowane parametry wybranych elipsoid:
 - WGS84     `wgs84`
 - GRS'80    `grs80`
-- Mars      `mars`
 
 Domyślną elipsoidą jest **WGS84**. Aby zastosować model wybranej innej elipsoidy w obliczeniach, należy podać przy wywoływaniu programu flagę `--model [nazwa_modelu]` z nazwą wybranej elipsoidy, np.
 ```
