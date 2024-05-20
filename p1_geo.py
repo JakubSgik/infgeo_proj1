@@ -26,9 +26,9 @@ class Transformacje:
         elif model == "mars":
             self.a = 3396900.0
             self.b = 3376097.80585952
-        elif model == "krasowski":
-            self.a = 6378245.0
-            self.b = 6356863.01877307
+        # elif model == "krasowski":
+        #     self.a = 6378245.0
+        #     self.b = 6356863.01877307
         else:
             raise NotImplementedError(f"{model} model not implemented")
         self.flat = (self.a - self.b) / self.a

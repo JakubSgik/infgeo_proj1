@@ -18,12 +18,11 @@ W bibliotece zostały zaimplementowane jak dotąd metody pozwalające na następ
 Ponadto, biblioteka zawiera wbudowane parametry wybranych elipsoid:
 - WGS84     `wgs84`
 - GRS'80    `grs80`
-- Krasowskiego `krasowski`
 - Mars      `mars`
 
 Domyślną elipsoidą jest **WGS84**. Aby zastosować model wybranej innej elipsoidy w obliczeniach, należy podać przy wywoływaniu programu flagę `--model [nazwa_modelu]` z nazwą wybranej elipsoidy, np.
 ```
---model krasowski
+--model grs80
 ```
 ---
 Program obsługuje również flagę `--naglowek [dlugosc_naglowka]`, która zapewnia poprawne działanie poprzez pominięcie podanej liczby początkowych wierszy przy odczytywaniu pliku z danymi początkowymi. Domyślnie pomijany jest **1** wiersz, co również można skonfigurować przy wywołaniu:
@@ -48,7 +47,7 @@ python p1_geo.py --xyz2plh --naglowek 4 --model grs80 wsp_inp.txt
 ```
 
 ```bash
-python p1_geo.py --naglowek 2 --xyz1992 --model krasowski wsp_inp.txt
+python p1_geo.py --naglowek 2 --xyz1992 --model grs80 wsp_inp.txt
 ```
 **Uwaga** - w przypadku transformacji XYZ -> NEU, współrzędne punktu środkowego powinny zostać podane w kolejności `X0 Y0 Z0` bezpośrednio przed podaniem pliku z danymi.
 ```bash
